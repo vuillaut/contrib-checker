@@ -1,0 +1,18 @@
+# Configuration for contributor metadata check
+# This file controls the behavior of the GitHub Action that checks
+# if contributors from PR commits are listed in metadata files.
+
+# Mode: "warn" (default) or "fail"
+# - "warn": Post a comment but don't fail the CI
+# - "fail": Post a comment and fail the CI if contributors are missing
+mode: warn
+
+# Email addresses to ignore (typically bots)
+ignore_emails:
+  - dependabot[bot]@users.noreply.github.com
+  - github-actions[bot]@users.noreply.github.com
+
+# GitHub usernames/logins to ignore (typically bots)
+ignore_logins:
+  - dependabot[bot]
+  - github-actions[bot]
