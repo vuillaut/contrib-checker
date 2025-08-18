@@ -27,5 +27,5 @@ runs:
       shell: bash
 
     - name: Run check script
-      run: python .github/scripts/check_contributors.py
+      run: python "$GITHUB_ACTION_PATH/.github/scripts/check_contributors.py
       shell: bash
