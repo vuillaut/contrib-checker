@@ -181,18 +181,34 @@ class ContributorChecker:
 		if not requests:
 			print('requests not installed; skipping post')
 			return False
+		
+		print(f'GitHub token present: {bool(self.github_token)}')
+		print(f'GitHub repo: {self.github_repo}')
+		print(f'PR number: {self.pr_number}')
+		
 		if not (self.github_token and self.github_repo and self.pr_number):
 			print('Missing GitHub env variables; cannot post comment')
+			print('Required env vars: GITHUB_TOKEN, GITHUB_REPOSITORY, PR_NUMBER')
 			return False
+		
 		url = f"https://api.github.com/repos/{self.github_repo}/issues/{self.pr_number}/comments"
 		headers = {'Authorization': f'token {self.github_token}', 'Accept': 'application/vnd.github.v3+json'}
+		
+		print(f'Posting comment to: {url}')
+		
 		try:
 			r = requests.post(url, headers=headers, json={'body': self.create_comment_body(missing)})
+			print(f'Response status: {r.status_code}')
+			if r.status_code != 201:
+				print(f'Response body: {r.text}')
 			r.raise_for_status()
-			print('Posted PR comment')
+			print('Posted PR comment successfully')
 			return True
 		except Exception as e:
 			print(f'Failed to post PR comment: {e}')
+			if hasattr(e, 'response'):
+				print(f'Response status: {e.response.status_code}')
+				print(f'Response body: {e.response.text}')
 			return False
 
 	def check_contributors(self) -> bool:
@@ -205,7 +221,7 @@ class ContributorChecker:
 		citation_cff = self.parse_citation_cff()
 		codemeta_json = self.parse_codemeta_json()
 		
-		print(f'\nChecking CITATION.cff:')
+		print('\nChecking CITATION.cff:')
 		if citation_cff:
 			print(f'  Found {len(citation_cff)} contributors in CITATION.cff')
 			for c in sorted(citation_cff):
@@ -218,7 +234,7 @@ class ContributorChecker:
 		else:
 			print('  CITATION.cff not found or empty')
 		
-		print(f'\nChecking codemeta.json:')
+		print('\nChecking codemeta.json:')
 		if codemeta_json:
 			print(f'  Found {len(codemeta_json)} contributors in codemeta.json')
 			for c in sorted(codemeta_json):
@@ -235,13 +251,27 @@ class ContributorChecker:
 		metadata = citation_cff | codemeta_json
 		missing = self.find_missing_contributors(pr_contribs, metadata)
 		
-		print(f'\nOverall result:')
+		print('\nOverall result:')
+		current_mode = self.config.get('mode', 'warn')
+		print(f'Running in mode: {current_mode}')
+		
 		if missing:
 			print(f'Missing contributors (not in any metadata file): {sorted(missing)}')
-			self.post_pr_comment(missing)
-			return False if self.config.get('mode') == 'fail' else True
-		print('All PR contributors present in at least one metadata file')
-		return True
+			print('Attempting to post PR comment...')
+			comment_posted = self.post_pr_comment(missing)
+			if not comment_posted:
+				print('Failed to post PR comment - check GitHub token and permissions')
+			
+			# Only fail if mode is 'fail', otherwise just warn
+			if current_mode == 'fail':
+				print('Mode is "fail" - exiting with error code')
+				return False
+			else:
+				print('Mode is "warn" - posting warning but not failing')
+				return True
+		else:
+			print('All PR contributors present in at least one metadata file')
+			return True
 
 	def check_all_contributors_in_metadata(self) -> bool:
 		allc = self.get_all_contributors()

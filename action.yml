@@ -38,6 +38,10 @@ runs:
       run: python ${{ github.action_path }}/check_contributors.py
       shell: bash
       env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         ACTION_MODE: ${{ inputs.mode }}
         ACTION_IGNORE_EMAILS: ${{ inputs.ignore_emails }}
         ACTION_IGNORE_LOGINS: ${{ inputs.ignore_logins }}
