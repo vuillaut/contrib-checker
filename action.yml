@@ -7,6 +7,14 @@ inputs:
     description: "Behavior mode: 'warn' (default) or 'fail'. 'warn' posts a comment but doesn't fail the CI, while 'fail' posts a comment and fails the CI if contributors are missing."
     required: false
     default: warn
+  ignore_emails:
+    description: "Comma-separated list of email addresses to ignore when checking contributors (e.g., 'bot@example.com,ci@example.com')"
+    required: false
+    default: ""
+  ignore_logins:
+    description: "Comma-separated list of login names to ignore when checking contributors (e.g., 'dependabot[bot],ci-bot')"
+    required: false
+    default: ""
 
 
 runs:
@@ -29,3 +37,7 @@ runs:
     - name: Run check script
       run: python check_contributors.py
       shell: bash
+      env:
+        ACTION_MODE: ${{ inputs.mode }}
+        ACTION_IGNORE_EMAILS: ${{ inputs.ignore_emails }}
+        ACTION_IGNORE_LOGINS: ${{ inputs.ignore_logins }}

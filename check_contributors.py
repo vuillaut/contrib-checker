@@ -48,6 +48,22 @@ class ContributorChecker:
 					default.update(data)
 			except Exception as e:
 				print(f"Warning loading config: {e}")
+		
+		# Override with action inputs if provided
+		action_mode = os.environ.get('ACTION_MODE')
+		if action_mode:
+			default['mode'] = action_mode
+			
+		action_ignore_emails = os.environ.get('ACTION_IGNORE_EMAILS', '').strip()
+		if action_ignore_emails:
+			emails = [email.strip() for email in action_ignore_emails.split(',') if email.strip()]
+			default['ignore_emails'] = emails
+			
+		action_ignore_logins = os.environ.get('ACTION_IGNORE_LOGINS', '').strip()
+		if action_ignore_logins:
+			logins = [login.strip() for login in action_ignore_logins.split(',') if login.strip()]
+			default['ignore_logins'] = logins
+			
 		return default
 
 	def _run_git(self, args: list) -> str:
@@ -62,6 +78,13 @@ class ContributorChecker:
 		m = re.search(r'<([^>]+)>', contributor)
 		if m and m.group(1) in self.config.get('ignore_emails', []):
 			return False
+		
+		# Check ignore_logins - extract potential login from contributor string
+		ignore_logins = self.config.get('ignore_logins', [])
+		for login in ignore_logins:
+			if login.lower() in contributor.lower():
+				return False
+		
 		lower = contributor.lower()
 		if 'bot' in lower or 'dependabot' in lower:
 			return False
@@ -177,23 +200,94 @@ class ContributorChecker:
 		print(f'Found {len(pr_contribs)} contributors in PR commits')
 		for c in sorted(pr_contribs):
 			print(f'  - {c}')
-		metadata = self.parse_citation_cff() | self.parse_codemeta_json()
+		
+		# Check each metadata file separately
+		citation_cff = self.parse_citation_cff()
+		codemeta_json = self.parse_codemeta_json()
+		
+		print(f'\nChecking CITATION.cff:')
+		if citation_cff:
+			print(f'  Found {len(citation_cff)} contributors in CITATION.cff')
+			for c in sorted(citation_cff):
+				print(f'    - {c}')
+			missing_citation = self.find_missing_contributors(pr_contribs, citation_cff)
+			if missing_citation:
+				print(f'  Missing from CITATION.cff: {sorted(missing_citation)}')
+			else:
+				print('  All PR contributors present in CITATION.cff')
+		else:
+			print('  CITATION.cff not found or empty')
+		
+		print(f'\nChecking codemeta.json:')
+		if codemeta_json:
+			print(f'  Found {len(codemeta_json)} contributors in codemeta.json')
+			for c in sorted(codemeta_json):
+				print(f'    - {c}')
+			missing_codemeta = self.find_missing_contributors(pr_contribs, codemeta_json)
+			if missing_codemeta:
+				print(f'  Missing from codemeta.json: {sorted(missing_codemeta)}')
+			else:
+				print('  All PR contributors present in codemeta.json')
+		else:
+			print('  codemeta.json not found or empty')
+		
+		# Overall check (union of both files)
+		metadata = citation_cff | codemeta_json
 		missing = self.find_missing_contributors(pr_contribs, metadata)
+		
+		print(f'\nOverall result:')
 		if missing:
-			print(f'Missing contributors: {sorted(missing)}')
+			print(f'Missing contributors (not in any metadata file): {sorted(missing)}')
 			self.post_pr_comment(missing)
 			return False if self.config.get('mode') == 'fail' else True
-		print('All PR contributors present in metadata')
+		print('All PR contributors present in at least one metadata file')
 		return True
 
 	def check_all_contributors_in_metadata(self) -> bool:
 		allc = self.get_all_contributors()
-		metadata = self.parse_citation_cff() | self.parse_codemeta_json()
+		print(f'Found {len(allc)} total contributors in repository')
+		for c in sorted(allc):
+			print(f'  - {c}')
+		
+		# Check each metadata file separately
+		citation_cff = self.parse_citation_cff()
+		codemeta_json = self.parse_codemeta_json()
+		
+		print('\nChecking CITATION.cff:')
+		if citation_cff:
+			print(f'  Found {len(citation_cff)} contributors in CITATION.cff')
+			for c in sorted(citation_cff):
+				print(f'    - {c}')
+			missing_citation = self.find_missing_contributors(allc, citation_cff)
+			if missing_citation:
+				print(f'  Missing from CITATION.cff: {sorted(missing_citation)}')
+			else:
+				print('  All repository contributors present in CITATION.cff')
+		else:
+			print('  CITATION.cff not found or empty')
+		
+		print('\nChecking codemeta.json:')
+		if codemeta_json:
+			print(f'  Found {len(codemeta_json)} contributors in codemeta.json')
+			for c in sorted(codemeta_json):
+				print(f'    - {c}')
+			missing_codemeta = self.find_missing_contributors(allc, codemeta_json)
+			if missing_codemeta:
+				print(f'  Missing from codemeta.json: {sorted(missing_codemeta)}')
+			else:
+				print('  All repository contributors present in codemeta.json')
+		else:
+			print('  codemeta.json not found or empty')
+		
+		# Overall check (union of both files)
+		metadata = citation_cff | codemeta_json
 		missing = self.find_missing_contributors(allc, metadata)
+		
+		print('\nOverall result:')
 		if missing:
-			print(f'Missing contributors in repo: {sorted(missing)}')
+			print(f'Missing contributors (not in any metadata file): {sorted(missing)}')
 			return False
-		print('All contributors present in metadata files')
+		print('All contributors present in at least one metadata file')
 		return True
 
 

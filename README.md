@@ -7,9 +7,8 @@ Why this is useful
 - Helps projects maintain reproducible credit and citation information
 
 What this repository provides
-- A Python script at `.github/scripts/check_contributors.py` that performs the check
-- A GitHub Actions workflow at `.github/workflows/metadata-check.yml` that runs the script on PR events
-- A sample configuration `.github/contrib-metadata-check.yml` to control behavior
+- A Python script at `check_contributors.py` that performs the check
+- A GitHub Actions bot at `action.yml` that runs the script on PR events
 
 How it works
 - The action runs on PR events. It runs `git log --use-mailmap --format='%aN <%aE>' BASE..HEAD` to collect commit authors, so ensure `.mailmap` is present if you need to unify multiple emails.
@@ -21,17 +20,24 @@ How it works
 
 1. Ensure your repository has `CITATION.cff` and/or `codemeta.json` with author/contributor entries.
 2. Add a `.mailmap` at the repository root if you need to unify alternate emails or names from the git history.
-3. Add this action (or copy the workflow) into your repo; the included workflow triggers on pull requests.
+3. Add this action (or copy the workflow) into your repo in `.github/workflows/contrib-check.yml`; the included workflow triggers on pull requests.
 
 
-### Example `contrib-metadata-check.yml`
+### Example `.github/workflows/contrib-check.yml`
 
 ```yaml
-mode: warn        # "warn" (default) or "fail"
-ignore_emails:
-  - dependabot[bot]@users.noreply.github.com
-ignore_logins:
-  - dependabot[bot]
+jobs:
+  contrib-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Contrib metadata check
+        uses: vuillaut/contrib-checker@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          mode: warn  # or 'fail' to make the workflow fail when contributors are missing
+          ignore_emails: "dependabot[bot]@users.noreply.github.com,ci-bot@example.com,noreply@github.com"
+          ignore_logins: "dependabot[bot],github-actions[bot],ci-bot"
 ```
 
 ## Requirements
