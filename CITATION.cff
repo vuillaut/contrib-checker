@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: ContribChecker
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Thomas
+    family-names: Vuillaume
+    email: thomas.vuillaume@lapp.in2p3.fr
+    affiliation: 'LAPP, CNRS'
+    orcid: 'https://orcid.org/0000-0002-5686-2078'
+repository-code: 'https://github.com/vuillaut/contrib-checker.git'
+url: 'https://github.com/vuillaut/contrib-checker'
+abstract: >-
+  ContribChecker makes sure code contributors are present in credit files such as CITATION.cff or codemeta.json.
+keywords:
+  - software quality
+  - metadata
+  - citation
+license: MIT
