@@ -1,6 +1,10 @@
 name: Contributors metadata check
 description: Checks if code contributors are properly listed in metadata files (CITATION.cff / codemeta.json) based on the git history
 
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
 inputs:
   github_token:
     required: true
