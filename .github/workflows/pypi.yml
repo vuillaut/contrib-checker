@@ -1,0 +1,165 @@
+name: Publish to PyPI
+
+# This workflow publishes the package to PyPI when:
+# 1. A new release is published (automatic PyPI publication)
+# 2. Manually triggered via workflow_dispatch (with option for TestPyPI)
+#
+# For PyPI publication, create a new release on GitHub:
+# 1. Update version in pyproject.toml and contrib_checker/__init__.py
+# 2. Create and push a new git tag: git tag v1.0.0 && git push origin v1.0.0  
+# 3. Create a GitHub release from the tag
+#
+# For TestPyPI testing:
+# 1. Go to Actions tab -> "Publish to PyPI" workflow
+# 2. Click "Run workflow" and check "Publish to Test PyPI"
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      test_pypi:
+        description: 'Publish to Test PyPI instead of PyPI'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Check distribution
+      run: python -m twine check dist/*
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+  test-install:
+    name: Test installation
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    - name: Install package
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install dist/*.whl
+
+    - name: Test import
+      run: |
+        python -c "import contrib_checker; print('✅ Package imports successfully')"
+        python -c "from contrib_checker import ContributorChecker, GitHubContributorChecker, GitLabContributorChecker; print('✅ All classes importable')"
+
+    - name: Test CLI
+      run: |
+        contrib-checker --help
+
+  publish-to-testpypi:
+    name: Publish to TestPyPI
+    needs: [build, test-install]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.test_pypi
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/contrib-checker
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs: [build, test-install]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/contrib-checker
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+  verify-pypi-publish:
+    name: Verify PyPI publication
+    needs: publish-to-pypi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    steps:
+    - name: Wait for package to be available
+      run: sleep 60
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Install from PyPI
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install contrib-checker
+
+    - name: Test PyPI installation
+      run: |
+        python -c "import contrib_checker; print(f'✅ Installed version: {contrib_checker.__version__}')"
+        contrib-checker --help

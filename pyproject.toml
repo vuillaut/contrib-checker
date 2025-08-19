@@ -7,14 +7,13 @@ name = "contrib-checker"
 version = "1.0.0"
 description = "Check if code contributors are properly listed in metadata files such as CITATION.cff and codemeta.json based on the git history"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 authors = [
     {name = "Thomas Vuillaume", email = "thomas.vuillaume@lapp.in2p3.fr"}
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Quality Assurance",
