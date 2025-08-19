@@ -1,6 +1,7 @@
 # contrib-checker
 
-contrib-checker is a library and set of tools that verify contributors from git history are properly listed in repository metadata files (`CITATION.cff` and `codemeta.json`). 
+contrib-checker checks if code contributors are properly listed in metadata files such as `CITATION.cff` and `codemeta.json` based on the git history.
+
 It provides:
 
 - **Python library**: Installable package for programmatic use
