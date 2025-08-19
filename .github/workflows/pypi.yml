@@ -163,3 +163,11 @@ jobs:
       run: |
         python -c "import contrib_checker; print(f'✅ Installed version: {contrib_checker.__version__}')"
         contrib-checker --help
+
+  update-tags:
+    name: 'Update Tags'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Update Tags'
+        uses: cssnr/update-version-tags-action@v1
