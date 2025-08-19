@@ -30,12 +30,12 @@ runs:
       with:
         python-version: '3.x'
 
-    - name: Install deps
-      run: python -m pip install -r ${{ github.action_path }}/requirements.txt
+    - name: Install contrib-checker package
+      run: python -m pip install ${{ github.action_path }}
       shell: bash
 
-    - name: Run check script
-      run: python ${{ github.action_path }}/check_contributors.py
+    - name: Run contributor check
+      run: python -m contrib_checker.github
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
