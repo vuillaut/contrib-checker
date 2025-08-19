@@ -131,7 +131,7 @@ jobs:
     
     steps:
       - name: Contrib metadata check
-        uses: vuillaut/contrib-checker@main
+        uses: vuillaut/contrib-checker@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           mode: warn  # or 'fail' to make the workflow fail when contributors are missing
