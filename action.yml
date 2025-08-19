@@ -1,4 +1,5 @@
-name: Contrib metadata check
+name: Contributors metadata check
+description: contrib-checker checks if code contributors are properly listed in metadata files such as CITATION.cff and codemeta.json based on the git history
 
 inputs:
   github_token:
