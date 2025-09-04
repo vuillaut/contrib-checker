@@ -1,7 +1,10 @@
 # contrib-checker
 
+--- 
+
 <img width="1980" height="408" alt="# contrib-checker_ Visual Schema Design Brief - visual selection" src="https://github.com/user-attachments/assets/8678bc95-9b88-4bce-890c-82d6c9e3ea2f" />
 
+---
 
 contrib-checker checks if code contributors are properly listed in metadata files such as `CITATION.cff` and `codemeta.json` based on the git history.
 
